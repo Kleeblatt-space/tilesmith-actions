@@ -1,0 +1,67 @@
+name: Verify dist/ is in sync with src/
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  verify-dist:
+    runs-on: ubuntu-latest
+    name: Check dist/ matches src/
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build dist/
+        run: npm run build
+
+      - name: Check if dist/ is in sync
+        run: |
+          if git diff --exit-code dist/; then
+            echo "✅ dist/ is in sync with src/"
+          else
+            echo "❌ dist/ is out of sync with src/"
+            git diff dist/
+            exit 1
+          fi
+
+      - name: Comment on PR if out of sync
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `⚠️ **dist/ is out of sync with src/**
+
+Please rebuild by running locally:
+\`\`\`bash
+npm run build
+git add dist/
+git commit -m 'build: rebuild dist from src changes'
+git push
+\`\`\`
+
+The \`dist/\` folder must be kept in sync for the action to work correctly.`
+            })
