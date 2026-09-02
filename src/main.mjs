@@ -6,15 +6,19 @@ import { aggregate, markdownReport, upsertComment, writeSummary } from './report
 const API_URL = process.env.TILESMITH_API_URL || 'https://api.kleeblatt.space/v1/score';
 const REPORTS_URL = process.env.TILESMITH_REPORTS_URL || API_URL.replace(/\/score\/?$/, '/reports');
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
-
 /**
- * Get environment nrxt variable value, treating empty/whitespace as unset.
- * @param {string} name - The input name (will be normalized to INPUT_NAME_FORMAT)
- * @returns {string|undefined} - The value or undefined if unset/empty
+ * Get environment variable value, treating empty/whitespace as unset.
+ * Checks both the hyphen-normalized (INPUT_NAME_FORMAT) and non-normalized
+ * (INPUT_NAME-FORMAT) uppercase environment variable names.
+ * @param {string} name - The input name (e.g., 'fail-on', 'max-files')
+ * @returns {string|undefined} - The trimmed value or undefined if unset/empty
  */
 const getEnvValue = (name) => {
-  const normalized = process.env[`INPUT_${name.toUpperCase().replace(/-/g, '_')}`];
-  return normalized && normalized.trim().length > 0 ? normalized.trim() : undefined;
+  const normalized = process.env[`INPUT_${name.toUpperCase().replaceAll('-', '_')}`];
+  if (normalized && normalized.trim().length > 0) return normalized.trim();
+  const nonNormalized = process.env[`INPUT_${name.toUpperCase()}`];
+  if (nonNormalized && nonNormalized.trim().length > 0) return nonNormalized.trim();
+  return undefined;
 };
 
 /**

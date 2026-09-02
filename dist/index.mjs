@@ -2276,8 +2276,11 @@ var API_URL = process.env.TILESMITH_API_URL || "https://api.kleeblatt.space/v1/s
 var REPORTS_URL = process.env.TILESMITH_REPORTS_URL || API_URL.replace(/\/score\/?$/, "/reports");
 var root = process.env.GITHUB_WORKSPACE || process.cwd();
 var getEnvValue = (name) => {
-  const normalized = process.env[`INPUT_${name.toUpperCase().replace(/-/g, "_")}`];
-  return normalized && normalized.trim().length > 0 ? normalized.trim() : void 0;
+  const normalized = process.env[`INPUT_${name.toUpperCase().replaceAll("-", "_")}`];
+  if (normalized && normalized.trim().length > 0) return normalized.trim();
+  const nonNormalized = process.env[`INPUT_${name.toUpperCase()}`];
+  if (nonNormalized && nonNormalized.trim().length > 0) return nonNormalized.trim();
+  return void 0;
 };
 var input = (name, fallback = "") => getEnvValue(name) ?? fallback;
 var command = (kind, message) => console.log(`::${kind}::${String(message).replace(/[\r\n]/g, " ")}`);
