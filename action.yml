@@ -1,0 +1,41 @@
+name: 'TileSmith QC'
+description: >
+  Scores game tiles for production readiness (seams, borders, artifacts).
+  Zero-retention: images are scored in RAM, only hash + score are stored.
+branding:
+  icon: check-square
+  color: green
+inputs:
+  api-key:
+    description: 'TileSmith API key (ts_…)'
+    required: true
+  paths:
+    description: 'Comma-separated glob patterns'
+    required: false
+    default: 'assets/**'
+  fail-on:
+    description: 'Reject | Review | never'
+    required: false
+    default: 'Reject'
+  max-files:
+    description: 'Max tiles per run (1–500)'
+    required: false
+    default: '100'
+  upload-report:
+    description: 'Upload aggregate report to TileSmith API'
+    required: false
+    default: 'true'
+outputs:
+  production:
+    description: 'Number of Production tiles'
+  review:
+    description: 'Number of Review tiles'
+  reject:
+    description: 'Number of Reject tiles'
+  avg:
+    description: 'Average score'
+  report:
+    description: 'Path to tilesmith-report/report.json'
+runs:
+  using: 'node20'
+  main: 'dist/index.mjs'
