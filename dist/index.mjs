@@ -2275,7 +2275,7 @@ async function upsertComment({ token, repo, issueNumber, body, fetchImpl = fetch
 var API_URL = process.env.TILESMITH_API_URL || "https://api.kleeblatt.space/v1/score";
 var REPORTS_URL = process.env.TILESMITH_REPORTS_URL || API_URL.replace(/\/score\/?$/, "/reports");
 var root = process.env.GITHUB_WORKSPACE || process.cwd();
-var input = (name, fallback = "") => process.env[`INPUT_${name.toUpperCase().replaceAll("-", "_")}`] ?? fallback;
+var input = (name, fallback = "") => process.env[`INPUT_${name.toUpperCase().replaceAll("-", "_")}`] ?? process.env[`INPUT_${name.toUpperCase()}`] ?? fallback;
 var command = (kind, message) => console.log(`::${kind}::${String(message).replace(/[\r\n]/g, " ")}`);
 function validate() {
   const failOn = input("fail-on", "Reject").toLowerCase();
