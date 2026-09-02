@@ -6,7 +6,10 @@ import { aggregate, markdownReport, upsertComment, writeSummary } from './report
 const API_URL = process.env.TILESMITH_API_URL || 'https://api.kleeblatt.space/v1/score';
 const REPORTS_URL = process.env.TILESMITH_REPORTS_URL || API_URL.replace(/\/score\/?$/, '/reports');
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
-const input = (name, fallback = '') => process.env[`INPUT_${name.toUpperCase().replaceAll('-', '_')}`] ?? process.env[`INPUT_${name.toUpperCase()}`] ?? fallback;
+const input = (name, fallback = '') =>
+  process.env[`INPUT_${name.toUpperCase().replaceAll('-', '_')}`] ??
+  process.env[`INPUT_${name.toUpperCase()}`] ??
+  fallback;
 const command = (kind, message) => console.log(`::${kind}::${String(message).replace(/[\r\n]/g, ' ')}`);
 
 function validate() {
