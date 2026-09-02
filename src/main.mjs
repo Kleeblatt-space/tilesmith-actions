@@ -12,6 +12,11 @@ const input = (name, fallback = '') =>
   fallback;
 const command = (kind, message) => console.log(`::${kind}::${String(message).replace(/[\r\n]/g, ' ')}`);
 
+/**
+ * Validates the failure threshold and maximum file count configuration.
+ * @returns {{failOn: string, maxFiles: number}} The normalized failure threshold and validated file limit.
+ * @throws {Error} If the failure threshold is unsupported or the file limit is not an integer from 1 to 500.
+ */
 function validate() {
   const failOn = input('fail-on', 'Reject').toLowerCase();
   if (!['reject', 'review', 'never'].includes(failOn))
