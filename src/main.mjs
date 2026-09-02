@@ -39,13 +39,13 @@ function matches(file, patterns) {
   });
 }
 
-async function requestScore(buffer, apiKey) {
+async function requestScore(buffer, apiKey, fetchImpl = fetch) {
   let retry429 = true;
   for (let attempt = 0; attempt < 3; attempt++) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 30_000);
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetchImpl(API_URL, {
         method: 'POST',
         headers: { 'x-api-key': apiKey, 'content-type': 'image/png' },
         body: buffer,
@@ -190,4 +190,4 @@ if (import.meta.url === `file://${process.argv[1]}`)
     process.exitCode = error.code === 2 ? 2 : 1;
   });
 
-export { matches, aggregate };
+export { matches, aggregate, requestScore };
