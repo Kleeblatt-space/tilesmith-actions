@@ -45,3 +45,7 @@ test('all benchmark fixtures are readable PNGs and produce overlays', async () =
     assert.ok(overlay.length > source.length / 2, `${name} overlay was unexpectedly small`);
   }
 });
+
+test('committed action bundle loads in the Node ESM runtime', async () => {
+  await assert.doesNotReject(() => import('../dist/index.mjs'));
+});
