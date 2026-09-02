@@ -8,7 +8,7 @@ const REPORTS_URL = process.env.TILESMITH_REPORTS_URL || API_URL.replace(/\/scor
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
 
 /**
- * Get environment variable value, treating empty/whitespace as unset.
+ * Get environment nrxt variable value, treating empty/whitespace as unset.
  * @param {string} name - The input name (will be normalized to INPUT_NAME_FORMAT)
  * @returns {string|undefined} - The value or undefined if unset/empty
  */
