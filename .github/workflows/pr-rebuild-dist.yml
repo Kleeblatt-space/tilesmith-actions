@@ -1,0 +1,72 @@
+name: Auto-rebuild dist on PR
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  rebuild-and-suggest:
+    runs-on: ubuntu-latest
+    name: Rebuild dist and suggest commit
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Rebuild dist/
+        run: npm run build
+
+      - name: Check if dist/ changed
+        id: check_changes
+        run: |
+          if git diff --quiet dist/; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "✅ dist/ is already up-to-date"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "📦 dist/ has changes"
+          fi
+
+      - name: Commit and push dist/ changes
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dist/
+          git commit -m "build: rebuild dist from src changes"
+          git push
+
+      - name: Comment on PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const changed = '${{ steps.check_changes.outputs.changed }}' === 'true';
+            const message = changed
+              ? `✅ **dist/ rebuilt automatically**\n\nI detected changes in \`src/\` and automatically rebuilt \`dist/index.mjs\`. The changes have been committed to this PR.\n\n**Next steps:**\n- Push to update your branch if needed\n- The verify-dist workflow will check that everything matches`
+              : `✅ **dist/ is in sync**\n\nYour changes don't affect the built output, or \`dist/\` was already up-to-date.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            })

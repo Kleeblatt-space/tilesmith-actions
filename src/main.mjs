@@ -6,24 +6,49 @@ import { aggregate, markdownReport, upsertComment, writeSummary } from './report
 const API_URL = process.env.TILESMITH_API_URL || 'https://api.kleeblatt.space/v1/score';
 const REPORTS_URL = process.env.TILESMITH_REPORTS_URL || API_URL.replace(/\/score\/?$/, '/reports');
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
-const input = (name, fallback = '') =>
-  process.env[`INPUT_${name.toUpperCase().replaceAll('-', '_')}`] ??
-  process.env[`INPUT_${name.toUpperCase()}`] ??
-  fallback;
+/**
+ * Get environment variable value, treating empty/whitespace as unset.
+ * Checks both the hyphen-normalized (INPUT_NAME_FORMAT) and non-normalized
+ * (INPUT_NAME-FORMAT) uppercase environment variable names.
+ * @param {string} name - The input name (e.g., 'fail-on', 'max-files')
+ * @returns {string|undefined} - The trimmed value or undefined if unset/empty
+ */
+const getEnvValue = (name) => {
+  const normalized = process.env[`INPUT_${name.toUpperCase().replaceAll('-', '_')}`];
+  if (normalized && normalized.trim().length > 0) return normalized.trim();
+  const nonNormalized = process.env[`INPUT_${name.toUpperCase()}`];
+  if (nonNormalized && nonNormalized.trim().length > 0) return nonNormalized.trim();
+  return undefined;
+};
+
+/**
+ * Get GitHub Action input value with fallback support.
+ * Checks both normalized and non-normalized uppercase INPUT_* forms, treating empty/whitespace as unset.
+ * @param {string} name - The input name (e.g., 'fail-on', 'max-files')
+ * @param {string} [fallback=''] - Default value if not found
+ * @returns {string} - The resolved input value or fallback
+ */
+const input = (name, fallback = '') => getEnvValue(name) ?? fallback;
+
 const command = (kind, message) => console.log(`::${kind}::${String(message).replace(/[\r\n]/g, ' ')}`);
 
 /**
- * Validates the failure threshold and maximum file count configuration.
- * @returns {{failOn: string, maxFiles: number}} The normalized failure threshold and validated file limit.
- * @throws {Error} If the failure threshold is unsupported or the file limit is not an integer from 1 to 500.
+ * Validate and parse GitHub Action inputs.
+ * Enforces 'fail-on' to be one of: reject, review, never.
+ * Enforces 'max-files' to be an integer between 1 and 500.
+ * @returns {{failOn: string, maxFiles: number}} - Validated parameters
+ * @throws {Error} - If validation fails
  */
 function validate() {
   const failOn = input('fail-on', 'Reject').toLowerCase();
   if (!['reject', 'review', 'never'].includes(failOn))
     throw new Error('Invalid fail-on: use Reject, Review, or never.');
-  const maxFiles = Number(input('max-files', '100'));
+  
+  const maxFilesStr = input('max-files', '100');
+  const maxFiles = Number(maxFilesStr);
   if (!Number.isInteger(maxFiles) || maxFiles < 1 || maxFiles > 500)
     throw new Error('Invalid max-files: use an integer from 1 to 500.');
+  
   return { failOn, maxFiles };
 }
 

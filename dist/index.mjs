@@ -2275,13 +2275,21 @@ async function upsertComment({ token, repo, issueNumber, body, fetchImpl = fetch
 var API_URL = process.env.TILESMITH_API_URL || "https://api.kleeblatt.space/v1/score";
 var REPORTS_URL = process.env.TILESMITH_REPORTS_URL || API_URL.replace(/\/score\/?$/, "/reports");
 var root = process.env.GITHUB_WORKSPACE || process.cwd();
-var input = (name, fallback = "") => process.env[`INPUT_${name.toUpperCase().replaceAll("-", "_")}`] ?? process.env[`INPUT_${name.toUpperCase()}`] ?? fallback;
+var getEnvValue = (name) => {
+  const normalized = process.env[`INPUT_${name.toUpperCase().replaceAll("-", "_")}`];
+  if (normalized && normalized.trim().length > 0) return normalized.trim();
+  const nonNormalized = process.env[`INPUT_${name.toUpperCase()}`];
+  if (nonNormalized && nonNormalized.trim().length > 0) return nonNormalized.trim();
+  return void 0;
+};
+var input = (name, fallback = "") => getEnvValue(name) ?? fallback;
 var command = (kind, message) => console.log(`::${kind}::${String(message).replace(/[\r\n]/g, " ")}`);
 function validate() {
   const failOn = input("fail-on", "Reject").toLowerCase();
   if (!["reject", "review", "never"].includes(failOn))
     throw new Error("Invalid fail-on: use Reject, Review, or never.");
-  const maxFiles = Number(input("max-files", "100"));
+  const maxFilesStr = input("max-files", "100");
+  const maxFiles = Number(maxFilesStr);
   if (!Number.isInteger(maxFiles) || maxFiles < 1 || maxFiles > 500)
     throw new Error("Invalid max-files: use an integer from 1 to 500.");
   return { failOn, maxFiles };
